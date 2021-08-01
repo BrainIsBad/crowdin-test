@@ -9,13 +9,17 @@ import { SidebarProvider } from './SidebarProvider';
 export async function activate(context: vscode.ExtensionContext) {
 	const config = getCrowdinConfig();
 
-	if (!config) {return null;}
+	if (!config) {
+		await vscode.window.showErrorMessage('Crowdin-test: Your project doesn\'t have configuration file.');
+		return null;
+	}
 	
 	const { projectsGroupsApi } = new crowdin(config);
 
 	try {
 		await projectsGroupsApi.listProjects();
-	} catch {
+	} catch (e) {
+		await vscode.window.showErrorMessage(`Crowdin-test: ${e.error.message}`);
 		return null;
 	}
 	

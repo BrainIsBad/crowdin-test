@@ -10,28 +10,12 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:crowdin-test.helloWorld",
-		"onCommand:crowdin-test.askQuestion",
-		"onCommand:crowdin-test.refresh",
 		"onView:crowdin-test-sidebar"
 	],
 	"main": "./dist/extension.js",
 	"contributes": {
 		"commands": [
-			{
-				"command": "crowdin-test.helloWorld",
-				"title": "Hello World"
-			},
-			{
-				"command": "crowdin-test.askQuestion",
-				"category": "Crowdin test",
-				"title": "Ask question"
-			},
-			{
-				"command": "crowdin-test.refresh",
-				"category": "Crowdin test",
-				"title": "Refresh"
-			}
+			
 		],
 		"viewsContainers": {
 			"activitybar": [
