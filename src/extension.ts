@@ -1,24 +1,27 @@
 import * as vscode from 'vscode';
-import { HelloWorldPanel } from './HelloWorldPanel';
 
-export function activate(context: vscode.ExtensionContext) {
+import crowdin from '@crowdin/crowdin-api-client';
 
+import {getCrowdinConfig} from './get-crowdin-config';
+import { SidebarProvider } from './SidebarProvider';
+
+
+export async function activate(context: vscode.ExtensionContext) {
+	const config = getCrowdinConfig();
+
+	if (!config) {return null;}
+	
+	const { projectsGroupsApi } = new crowdin(config);
+
+	try {
+		await projectsGroupsApi.listProjects();
+	} catch {
+		return null;
+	}
+	
+	const sidebarProvider = new SidebarProvider(context.extensionUri);
 	context.subscriptions.push(
-		vscode.commands.registerCommand('crowdin-test.helloWorld', () => {
-			HelloWorldPanel.createOrShow(context.extensionUri);
-		})
-	);
-
-	context.subscriptions.push(
-		vscode.commands.registerCommand('crowdin-test.askQuestion', async () => {
-			const answer = await vscode.window.showInformationMessage('How was your day?', 'good', 'bad');
-
-			if (answer === 'good') {
-				console.log({answer});
-			} else {
-				vscode.window.showErrorMessage('It is sad :(');
-			}
-		})
+		vscode.window.registerWebviewViewProvider('crowdin-test-sidebar', sidebarProvider)
 	);
 }
 

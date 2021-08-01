@@ -1,5 +1,5 @@
 {
-  "name": "crowdin-test",
+	"name": "crowdin-test",
 	"displayName": "Crowdin-test",
 	"description": "Preview available projects with there details in Crowdin-based projects",
 	"version": "0.0.1",
@@ -10,8 +10,9 @@
 		"Other"
 	],
 	"activationEvents": [
-        "onCommand:crowdin-test.helloWorld",
+		"onCommand:crowdin-test.helloWorld",
 		"onCommand:crowdin-test.askQuestion",
+		"onCommand:crowdin-test.refresh",
 		"onView:crowdin-test-sidebar"
 	],
 	"main": "./dist/extension.js",
@@ -25,6 +26,11 @@
 				"command": "crowdin-test.askQuestion",
 				"category": "Crowdin test",
 				"title": "Ask question"
+			},
+			{
+				"command": "crowdin-test.refresh",
+				"category": "Crowdin test",
+				"title": "Refresh"
 			}
 		],
 		"viewsContainers": {
@@ -37,7 +43,7 @@
 			]
 		},
 		"views": {
-			"crowdin-test-sidebar-view":[
+			"crowdin-test-sidebar-view": [
 				{
 					"type": "webview",
 					"id": "crowdin-test-sidebar",
@@ -51,8 +57,8 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run package",
-		"compile": "webpack",
-		"watch": "webpack --watch",
+		"compile": "rollup -c && webpack --mode production",
+		"watch": "concurrently \"rollup -c -w\" \"webpack --mode development --watch\"",
 		"package": "webpack --mode production --devtool hidden-source-map",
 		"test-compile": "tsc -p ./",
 		"test-watch": "tsc -watch -p ./",
@@ -61,19 +67,33 @@
 		"test": "node ./out/test/runTest.js"
 	},
 	"devDependencies": {
-		"@types/vscode": "^1.58.0",
+		"@rollup/plugin-commonjs": "^19.0.2",
+		"@rollup/plugin-node-resolve": "^13.0.4",
+		"@rollup/plugin-typescript": "^8.2.3",
+		"@tsconfig/svelte": "^2.0.1",
 		"@types/glob": "^7.1.3",
 		"@types/mocha": "^8.2.2",
 		"@types/node": "14.x",
-		"eslint": "^7.27.0",
+		"@types/vscode": "^1.58.0",
 		"@typescript-eslint/eslint-plugin": "^4.26.0",
 		"@typescript-eslint/parser": "^4.26.0",
+		"concurrently": "^6.2.0",
+		"eslint": "^7.27.0",
 		"glob": "^7.1.7",
 		"mocha": "^8.4.0",
+		"rollup": "^2.55.1",
+		"rollup-plugin-svelte": "^7.1.0",
+		"rollup-plugin-terser": "^7.0.2",
+		"svelte": "^3.41.0",
+		"svelte-check": "^2.2.3",
+		"svelte-preprocess": "^4.7.4",
+		"ts-loader": "^9.2.2",
 		"typescript": "^4.3.2",
 		"vscode-test": "^1.5.2",
-		"ts-loader": "^9.2.2",
 		"webpack": "^5.38.1",
 		"webpack-cli": "^4.7.0"
+	},
+	"dependencies": {
+		"@crowdin/crowdin-api-client": "^1.11.3"
 	}
 }

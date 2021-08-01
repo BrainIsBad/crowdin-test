@@ -1,33 +1,35 @@
 import * as vscode from "vscode";
 import { getNonce } from "./get-nonce";
+import {getCrowdinConfig} from './get-crowdin-config';
 
-export class HelloWorldPanel {
+export class DetailedViewPanel {
   /**
    * Track the currently panel. Only allow a single panel to exist at a time.
    */
-  public static currentPanel: HelloWorldPanel | undefined;
+  public static currentPanel: DetailedViewPanel | undefined;
 
   public static readonly viewType = "hello-world";
 
   private readonly _panel: vscode.WebviewPanel;
   private readonly _extensionUri: vscode.Uri;
+  private readonly _projectId: number;
   private _disposables: vscode.Disposable[] = [];
 
-  public static createOrShow(extensionUri: vscode.Uri) {
+  public static createOrShow(extensionUri: vscode.Uri, projectId: number) {
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
 
     // If we already have a panel, show it.
-    if (HelloWorldPanel.currentPanel) {
-      HelloWorldPanel.currentPanel._panel.reveal(column);
-      HelloWorldPanel.currentPanel._update();
+    if (DetailedViewPanel.currentPanel) {
+      DetailedViewPanel.currentPanel._panel.reveal(column);
+      DetailedViewPanel.currentPanel._update();
       return;
     }
 
     // Otherwise, create a new panel.
     const panel = vscode.window.createWebviewPanel(
-      HelloWorldPanel.viewType,
+      DetailedViewPanel.viewType,
       "VSinder",
       column || vscode.ViewColumn.One,
       {
@@ -42,21 +44,22 @@ export class HelloWorldPanel {
       }
     );
 
-    HelloWorldPanel.currentPanel = new HelloWorldPanel(panel, extensionUri);
+    DetailedViewPanel.currentPanel = new DetailedViewPanel(panel, extensionUri, projectId);
   }
 
   public static kill() {
-    HelloWorldPanel.currentPanel?.dispose();
-    HelloWorldPanel.currentPanel = undefined;
+    DetailedViewPanel.currentPanel?.dispose();
+    DetailedViewPanel.currentPanel = undefined;
   }
 
-  public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
-    HelloWorldPanel.currentPanel = new HelloWorldPanel(panel, extensionUri);
+  public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, projectId:number) {
+    DetailedViewPanel.currentPanel = new DetailedViewPanel(panel, extensionUri, projectId);
   }
 
-  private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
+  private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, projectId: number) {
     this._panel = panel;
     this._extensionUri = extensionUri;
+    this._projectId = projectId;
 
     // Set the webview's initial html content
     this._update();
@@ -80,7 +83,7 @@ export class HelloWorldPanel {
   }
 
   public dispose() {
-    HelloWorldPanel.currentPanel = undefined;
+    DetailedViewPanel.currentPanel = undefined;
 
     // Clean up our resources
     this._panel.dispose();
@@ -118,52 +121,43 @@ export class HelloWorldPanel {
   }
 
   private _getHtmlForWebview(webview: vscode.Webview) {
-    // // And the uri we use to load this script in the webview
+    const config = getCrowdinConfig();
+
+    const styleResetUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, "media", "reset.css")
+    );
     const scriptUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this._extensionUri, "media", "main.js")
+      vscode.Uri.joinPath(this._extensionUri, "out", "compiled/detailed.js")
+    );
+    const styleVSCodeUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, "media", "vscode.css")
     );
 
-    
-
-    // Uri to load styles into webview
-    const stylesResetUri = webview.asWebviewUri(
-        vscode.Uri.joinPath(this._extensionUri, "media", "reset.css")
-    );
-    const stylesMainUri = webview.asWebviewUri(
-        vscode.Uri.joinPath(this._extensionUri, "media", "vscode.css")
-    );
-
-    const cssUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this._extensionUri, "out", "compiled/swiper.css")
-    );
-
-    // // Use a nonce to only allow specific scripts to be run
+    // Use a nonce to only allow a specific script to be run.
     const nonce = getNonce();
 
     return `<!DOCTYPE html>
-			<html lang="en">
-			<head>
-				<meta charset="UTF-8">
-                <link href="${stylesResetUri}" rel="stylesheet">
-                <link href="${stylesMainUri}" rel="stylesheet">
-				<!--
-					Use a content security policy to only allow loading images from https or from our extension directory,
-					and only allow scripts that have a specific nonce.
-        -->
-        <meta http-equiv="Content-Security-Policy" content="img-src https: data:; style-src 'unsafe-inline' ${
-      webview.cspSource
-    }; script-src 'nonce-${nonce}';">
-				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <script nonce="${nonce}">
-            
-        </script>
-			</head>
-            <body>
-            <h1>Hello World!</h1>
-            <input />
-            <button id="button">Hello</button>
-			</body>
-            <script src="${scriptUri}" nonce="${nonce}">
-			</html>`;
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <!--
+        Use a content security policy to only allow loading images from https or from our extension directory,
+        and only allow scripts that have a specific nonce.
+      -->
+      <meta http-equiv="Content-Security-Policy" content="img-src https: data:; style-src 'unsafe-inline' ${
+        webview.cspSource
+      }; script-src 'nonce-${nonce}';">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link href="${styleResetUri}" rel="stylesheet">
+      <link href="${styleVSCodeUri}" rel="stylesheet">
+      <script nonce="${nonce}">
+        const projectId = ${this._projectId};
+        const config = ${JSON.stringify(config)};
+      </script>
+    </head>
+    <body>
+      <script nonce="${nonce}" src="${scriptUri}"></script>
+    </body>
+    </html>`;
   }
 }
