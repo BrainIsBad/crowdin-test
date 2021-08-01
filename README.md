@@ -1,6 +1,6 @@
 # Test task for Crowdin
 
-I have completed all requirements.
+Requirements that I have done.
 
 1. Searching for crowdin.json
 2. Error notifications
